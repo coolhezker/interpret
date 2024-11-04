@@ -39,15 +39,6 @@ public:
         }
         else cerr << "Error..." << endl;
     }
-    bool operator!=(const File& f1) {
-        return name != f1.name;
-    }
-    bool operator==(const File& f1) {
-        return name == f1.name;
-    }
-    void removeFile() {
-        delete this;
-    }
 };
 
 class Dir {
@@ -59,18 +50,36 @@ private:
 public:
     explicit Dir(const string& n) : name{ n }, parent{ nullptr } {};
     Dir(const string& n, Dir* p) : name{ n }, parent{ p } {};
+    ~Dir() {
+        for (File* file : files) {
+            delete file; // освобождение всех файлов
+        }
+        for (Dir* child : childs) {
+            delete child; // рекурсивное освобождение всех дочерних директорий
+        }
+    }
     void addFile(const string& n) { // добавление объекта типа File в вектор files
         if (this) {
-            File* f = new File{ n };// тут возможна утечка памяти, но это решалось бы функцией deleteFile(const string& n)
-                                    // но она не нужна по условию. может сделаю по-своему желанию позже.
+            for (int i = 0; i < this->files.size(); i++) {
+                if (this->files[i]->getName() == n) {
+                    cout << "This file already exists." << endl;
+                    return;
+                }
+            }
+            File* f = new File{ n };
             this->files.push_back(f);
         }
         else cerr << "Error..." << endl;
     }
     void addChild(const string& n) { // добавить директорию-ребёнка(вектор childs)
         if (this) {
-            Dir* newchild = new Dir{ n, this }; // тут возможна утечка памяти, но это решалось бы функцией deleteChild(const string& n)
-                                                // но она не нужна по условию. может сделаю по-своему желанию позже.
+            for (int i = 0; i < this->childs.size(); i++) {
+                if (this->childs[i]->name == n) {
+                    cout << "This directory already exists." << endl;
+                    return;
+                }
+            }
+            Dir* newchild = new Dir{ n, this };
             this->childs.push_back(newchild);
         }
         else cerr << "Error..." << endl;
@@ -149,14 +158,22 @@ public:
             cout << endl;
         }
     }
-    bool operator!=(const Dir& d) const {
-        return name != d.name;
-    }
-    bool operator==(const Dir& d) const {
-        return name == d.name;
+    void removeDir(const string& s) {
+        if (this) {
+            bool isFind = false;
+            for (int i = 0; i < this->childs.size(); i++) { // поиск директории в векторе childs с именем = s
+                if (this->childs[i]->name == s) {
+                    delete this->childs[i];
+                    this->childs.erase(this->childs.begin() + i);
+                    isFind = true;
+                }
+            }
+            if (!isFind) cout << "No such directory" << endl;
+        }
+        else cerr << "Error..." << endl;
     }
     Dir* changeDir(const string& s) { // возврат указателя на директорию с именем s
-        if (this != nullptr) {
+        if (this) {
             if (s == ".." && this->parent) return this->parent;
             for (int i = 0; i < this->childs.size(); i++) { // поиск директории в векторе childs с именем = s
                 if (this->childs[i]->name == s) {
@@ -172,7 +189,7 @@ public:
 
 int main() {
     string input_line;
-    Dir* home = new Dir{ root };
+    Dir* currentDir = new Dir{ root };
     while (true) {
         cout << "> ";
         getline(cin, input_line);
@@ -183,14 +200,14 @@ int main() {
             break;
         }
         else if (command == "ls") {
-            home->printAll();
+            currentDir->printAll();
         }
         else if (command == "pwd") {
-            home->printPath();
+            currentDir->printPath();
         }
         else if (command == "cd") {
             if (iss >> arg) {
-                home = home->changeDir(arg);
+                currentDir = currentDir->changeDir(arg);
             }
             else {
                 cout << "Error: 'cd' command requires an argument." << endl;
@@ -198,7 +215,7 @@ int main() {
         }
         else if (command == "mkdir") {
             if (iss >> arg) {
-                home->addChild(arg);
+                currentDir->addChild(arg);
             }
             else {
                 cout << "Error: 'mkdir' command requires an argument." << endl;
@@ -206,7 +223,7 @@ int main() {
         } 
         else if (command == "touch") {
             if(iss >> arg) {
-                home->addFile(arg);
+                currentDir->addFile(arg);
             }
             else {
                 cout << "Error: 'touch' commands requires an argument." << endl;
@@ -216,7 +233,7 @@ int main() {
             if (iss >> arg) {
                 if (getline(iss, arg2)) {
                     arg2[0] = '\0'; // думаю можно сделать как-то более адекватно(это нужно чтобы пробел после arg стал пустым символом
-                    home->changeContent(arg, arg2);
+                    currentDir->changeContent(arg, arg2);
                 }
                 else cout << "Error: content is invalid." << endl;
             }
@@ -224,12 +241,17 @@ int main() {
         }
         else if (command == "cat") {
             if (iss >> arg) {
-                home->seeFileContent(arg);
+                currentDir->seeFileContent(arg);
             }
             else cout << "Error: 'cat' commands requires an argument." << endl;
         }
+        else if (command == "rmdir") {
+            if (iss >> arg) {
+                currentDir->removeDir(arg);
+            }
+        }
         else cout << "Unknown command: " << command << endl;
     }
-    delete home;
+    delete currentDir;
     return 0;
 }
