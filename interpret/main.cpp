@@ -7,17 +7,15 @@ using namespace std;
 
 class Dir;
 
+const string root = "root";
+
 class File {
 private:
     string name; // им€ файла
-    //string format; // формат файла
     string content; // контент файла
 public:
-    //explicit File(const string& n, const string& f, const string& c) : name{ n }, format{ f }, content{ c } {};
-    //explicit File(const string& n, const string& f): name{ n }, format{ f }, content{ "" } {};
     explicit File(const string& n, const string& c) : name{ n }, content{ c } {};
     explicit File(const string& n) : name{ n }, content{ "" } {};
-    //File() : name{ "null" }, format{ "txt" }, content{ "" } {};
     File() : name{ "null.txt" }, content{ "" } {};
     ~File() {};
     void reName(const string& n) { // изменени€ значени€ строки name типа File
@@ -26,21 +24,29 @@ public:
         }
         else cerr << "Error..." << endl;
     }
-    /*void change_format(const string& f) { // изменени€ значени€ строки format типа File
-        if (this) {
-            this->format = f;
-        }
-        else cerr << "Error..." << endl;
-    } */
-    const string& getName() { // возврат строки name типа File
-        if (this) return this->name;
-        return nullptr;
+    const string& getName() const { // возврат строки name типа File
+        return this->name;
     }
-    void changeContent(const string& c) { // изменение значени€ строки content
+    void changeContent(const string& c) { // изменение значени€ строки content типа File
         if (this) {
-            this->content = c;
+            this->content += c;
         }
         else cerr << "Error..." << endl;
+    }
+    void seeFileContent() const{ // ¬ывод в поток cout строки content типа File
+        if (this) {
+            cout << this->content << endl;
+        }
+        else cerr << "Error..." << endl;
+    }
+    bool operator!=(const File& f1) {
+        return name != f1.name;
+    }
+    bool operator==(const File& f1) {
+        return name == f1.name;
+    }
+    void removeFile() {
+        delete this;
     }
 };
 
@@ -69,7 +75,7 @@ public:
         }
         else cerr << "Error..." << endl;
     }
-    void printFiles() { // вывод всех объектов типа File в векторе files
+    void printFiles() const { // вывод всех объектов типа File в векторе files
         if (this) {
             cout << "(";
             for (int i = 0; i < this->files.size(); i++) {
@@ -80,7 +86,7 @@ public:
         }
         else cerr << "Error..." << endl;
     }
-    void printDirs() { // вывод всех директорий-детей(вектор childs)
+    void printDirs() const { // вывод всех директорий-детей(вектор childs)
         if (this) {
             cout << "(";
             for (int i = 0; i < this->childs.size(); i++) {
@@ -91,7 +97,7 @@ public:
         }
         else cerr << "Error..." << endl;
     }
-    void printAll() { // вывод всех элементов векторов childs и files
+    void printAll() const { // вывод всех элементов векторов childs и files
         if (this) {
             cout << "Dirs: ";
             this->printDirs();
@@ -100,38 +106,78 @@ public:
         }
         else cerr << "Error..." << endl;
     }
-    void changeContent(const string& n) {
+    void changeContent(const string& n, const string& c) {
         if (this) {
+            bool isFind = false;
             for (int i = 0; i < this->files.size(); i++) {
                 if (this->files[i]->getName() == n) {
-                    this->files[i]->changeContent(n); // тут вызываетс€ функци€ changeContent из класса File, а не из класса Dir(никакой рекурсии нету)
+                    this->files[i]->changeContent(c); // тут вызываетс€ функци€ changeContent из класса File, а не из класса Dir(никакой рекурсии нету)
+                    isFind = true;
+                    break;
                 }
             }
+            if (!isFind) cout << "No such file." << endl;
         }
         else cerr << "Error..." << endl;
     }
-    Dir* changeDir(const string& s) { // возврат указател€ на директорию с именем s
+    void seeFileContent(const string& n) const { // вывод строки content типа File с name == n
         if (this) {
-            if (s == "..") return this->parent;
+            bool isFind = false;
+            for (int i = 0; i < this->files.size(); i++) {
+                if (this->files[i]->getName() == n) {
+                    this->files[i]->seeFileContent(); // эта функци€ вызываетс€ из класса File(никакой рекурсии нету)
+                    isFind = true;
+                    break;
+                }
+            }
+            if (!isFind) cout << "No such file." << endl;
+        }
+        else cerr << "Error..." << endl;
+    }
+    void printPath() {
+        if (this) {
+            vector<Dir*> v;
+            Dir* d = this;
+            while (d->parent != nullptr) {
+                v.push_back(d);
+                d = d->parent;
+            }
+            cout << "/" << root;
+            for (int i = v.size() - 1; i >= 0; i--) {
+                cout << "/" << v[i]->name;
+            }
+            cout << endl;
+        }
+    }
+    bool operator!=(const Dir& d) const {
+        return name != d.name;
+    }
+    bool operator==(const Dir& d) const {
+        return name == d.name;
+    }
+    Dir* changeDir(const string& s) { // возврат указател€ на директорию с именем s
+        if (this != nullptr) {
+            if (s == ".." && this->parent) return this->parent;
             for (int i = 0; i < this->childs.size(); i++) { // поиск директории в векторе childs с именем = s
                 if (this->childs[i]->name == s) {
                     return this->childs[i]; // возврат указател€ на эту директорию с именем s
                 }
             }
-        }
-        cout << "No such directory";
+            cout << "No such directory." << endl;
+        } 
+        else cerr << "Error..." << endl;
         return this; // возврат указател€ на директорию, дл€ которой выполн€етс€ функци€ в случае, если не найдена нужна директори€ с именем s
     }
 };
 
 int main() {
     string input_line;
-    Dir* home = new Dir{ "root" };
+    Dir* home = new Dir{ root };
     while (true) {
         cout << "> ";
         getline(cin, input_line);
         istringstream iss(input_line);
-        string command, arg;
+        string command, arg, arg2;
         iss >> command;
         if (command == "exit") {
             break;
@@ -139,9 +185,12 @@ int main() {
         else if (command == "ls") {
             home->printAll();
         }
+        else if (command == "pwd") {
+            home->printPath();
+        }
         else if (command == "cd") {
             if (iss >> arg) {
-                home = home->changeDir("arg");
+                home = home->changeDir(arg);
             }
             else {
                 cout << "Error: 'cd' command requires an argument." << endl;
@@ -160,28 +209,26 @@ int main() {
                 home->addFile(arg);
             }
             else {
-                cout << "Error: 'touch' commands requires an argument.";
+                cout << "Error: 'touch' commands requires an argument." << endl;
             }
         } 
         else if (command == "write") {
             if (iss >> arg) {
-                home->changeContent(arg);
+                if (getline(iss, arg2)) {
+                    arg2[0] = '\0'; // думаю можно сделать как-то более адекватно(это нужно чтобы пробел после arg стал пустым символом
+                    home->changeContent(arg, arg2);
+                }
+                else cout << "Error: content is invalid." << endl;
             }
-            else {
-                cout << "Error: 'touch' commands requires an argument.";
-            }
+            else cout << "Error: 'write' commands requires an argument." << endl;
         }
         else if (command == "cat") {
             if (iss >> arg) {
-                home->addFile(arg);
+                home->seeFileContent(arg);
             }
-            else {
-                cout << "Error: 'touch' commands requires an argument.";
-            }
+            else cout << "Error: 'cat' commands requires an argument." << endl;
         }
-        else {
-            cout << "Unknown command: " << command << endl;
-        }
+        else cout << "Unknown command: " << command << endl;
     }
     delete home;
     return 0;
