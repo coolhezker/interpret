@@ -8,7 +8,7 @@
 
 class Dir {
 private:
-    std::string name;
+    std::string name; // имя директории
     Dir* parent; // родитель директории
     std::vector<Dir*> childs; // директории-дети
     std::vector<File*> files; // файлы в директории
@@ -21,7 +21,7 @@ public:
     void printFiles();
     void printDirs();
     void printAll();
-    void changeContent(const std::string& n, const std::string& c);
+    void addContent(const std::string& n, const std::string& c);
     const std::string& returnFileContent(const std::string& n) const;
     void printPath();
     void removeDir(const std::string& s);

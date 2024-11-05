@@ -15,7 +15,7 @@ public:
     ~File();
     void reName(const std::string& n);
     const std::string& getName() const;
-    void changeContent(const std::string& c);
+    void addContent(const std::string& c);
     const std::string& returnFileContent() const;
 };
 #endif

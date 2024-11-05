@@ -4,7 +4,7 @@ using namespace std;
 using D = Dir;
     D::Dir(const string& n) : name{ n }, parent{ nullptr } {};
     D::Dir(const string& n, Dir* p) : name{ n }, parent{ p } {};
-    D::~Dir() {
+    D::~Dir() { // тут требуетс€ особый деструктор, чтобы не возникало утечки пам€ти.
         for (File* file : files) {
             delete file; // освобождение всех файлов
         }
@@ -69,12 +69,12 @@ using D = Dir;
         }
         else cerr << "Error..." << endl;
     }
-    void D::changeContent(const string& n, const string& c) {
+    void D::addContent(const string& n, const string& c) { // добавить контент c в файл с именем n
         if (this) {
             bool isFind = false;
             for (int i = 0; i < this->files.size(); i++) {
                 if (this->files[i]->getName() == n) {
-                    this->files[i]->changeContent(c); // тут вызываетс€ функци€ changeContent из класса File, а не из класса Dir(никакой рекурсии нету)
+                    this->files[i]->addContent(c); // тут вызываетс€ функци€ addContent из класса File, а не из класса Dir(никакой рекурсии нету)
                     isFind = true;
                     break;
                 }
@@ -98,27 +98,27 @@ using D = Dir;
         else cerr << "Error..." << endl;
         return "";
     }
-    void D::printPath() {
+    void D::printPath() { // вывод полного пути.
         if (this) {
-            vector<Dir*> v;
+            vector<Dir*> v; // объ€влени€ вектора указателей. можно было и vector<string>, но в чЄм смысл выдел€ть пам€ть дл€ строк, когда есть указатели на объекты
             Dir* d = this;
             while (d) {
                 v.push_back(d);
-                d = d->parent;
+                d = d->parent; // идЄм до корневой директории, пока она не станет nullptr(это не страшно, ибо мы не возвращаем nullptr)
             }
             for (int i = v.size() - 1; i >= 0; i--) {
-                cout << "/" << v[i]->name;
+                cout << "/" << v[i]->name; // вывод этого пути.
             }
             cout << endl;
         }
     }
-    void D::removeDir(const string& s) {
+    void D::removeDir(const string& s) { // удаление директории
         if (this) {
             bool isFind = false;
             for (int i = 0; i < this->childs.size(); i++) { // поиск директории в векторе childs с именем = s
                 if (this->childs[i]->name == s) {
-                    delete this->childs[i];
-                    this->childs.erase(this->childs.begin() + i);
+                    delete this->childs[i]; // удаление этой директории
+                    this->childs.erase(this->childs.begin() + i); // удаление указател€ на эту директорию из vector<Dir*> в родительской директории
                     isFind = true;
                 }
             }
@@ -126,13 +126,13 @@ using D = Dir;
         }
         else cerr << "Error..." << endl;
     }
-    void D::removeFile(const string& s) {
+    void D::removeFile(const string& s) { // удаление файла с именем s
         if (this) {
             bool isFind = false;
             for (int i = 0; i < this->files.size(); i++) {
                 if (this->files[i]->getName() == s) {
-                    delete this->files[i];
-                    this->files.erase(this->files.begin() + i);
+                    delete this->files[i]; // удаление этого файла
+                    this->files.erase(this->files.begin() + i); // удаление указател€ на этот файл из vector<File*>
                     isFind = true;
                     break;
                 }

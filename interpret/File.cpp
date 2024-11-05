@@ -14,7 +14,7 @@ using F = File;
     const string& F::getName() const { // возврат строки name типа File
         return this->name;
     }
-    void F::changeContent(const string& c) { // изменение значения строки content типа File
+    void F::addContent(const string& c) { // изменение значения строки content типа File
         if (this) {
             this->content += c;
         }

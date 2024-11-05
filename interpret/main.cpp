@@ -54,8 +54,8 @@ int main() {
         else if (command == "write") {
             if (iss >> arg) {
                 if (getline(iss, arg2)) {
-                    arg2[0] = '\0'; // думаю можно сделать как-то более адекватно(это нужно чтобы пробел после arg стал пустым символом
-                    currentDir->changeContent(arg, arg2);
+                    arg2[0] = '\0'; // думаю можно сделать как-то более адекватно(это нужно чтобы пробел после arg стал пустым символом)
+                    currentDir->addContent(arg, arg2);
                 }
                 else cout << "Error: content is invalid." << endl;
             }
